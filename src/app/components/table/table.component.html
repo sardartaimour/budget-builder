@@ -1,0 +1,168 @@
+<table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
+    <thead class="bg-gray-800 text-white">
+        <tr>
+            <th style="width: 200px;" class="text-left py-1 px-2 uppercase font-semibold text-sm border-b border-gray-200">
+                Start Period 
+                <input class="text-left" type="month" id="start" name="trip-start" [(ngModel)]="startDate" [max]="endDate"
+                    (change)="onDateChange($event)" />
+                End Period 
+                <input class="text-left" type="month" id="end" name="trip-end" [(ngModel)]="endDate" [min]="startDate"
+                    (change)="onDateChange($event)"/>
+            </th>
+            @for (month of months; track month) {
+                <th class="text-left py-1 px-2 uppercase font-semibold text-sm border-b border-gray-200">{{month}}</th>
+            }
+        </tr>
+    </thead>
+
+    <tbody class="text-gray-700">
+        @for (category of budgetData; track category.title; let parentCategoryIdx = $index) {
+            <tr class="border-b border-gray-200">
+                <td [attr.colspan]="category.type !== 'Summary' ? months.length + 1 : null"
+                    class="font-semibold text-left py-1 px-2 border-r border-gray-200">
+                    {{category.title}}
+                </td>
+
+                @if (category.data) {
+                    @for (data of category.data; track data.key) {
+                        <td class="text-center py-1 px-2 border-r border-gray-200">{{data.value}}</td>
+                    }
+                }
+            </tr>
+
+            @if (category?.items) {
+                @for (subCategory of category.items; track subCategory.title; let subCategoryIdx = $index) {
+                    
+                    @if (subCategoryIdx > 0) {
+                        <tr [attr.colspan]="months.length + 1"></tr>
+                    }
+    
+                    <tr class="border-b border-gray-200" (keydown.enter)="onAddSubCategory(subCategory.items)">
+                        <td [class.font-bold]="subCategory.type === 'Sub Category'" 
+                            class="text-left py-1 px-2 border-r border-gray-200">
+                            @if (subCategory.type === 'Sub Category' || subCategory.type === 'Items') {
+                                <input 
+                                    style="text-align: left;"
+                                    [attr.id]="subCategory.title+'_category_title_' + subCategoryIdx"
+                                    [name]="subCategory.title+'_category_title_' + subCategoryIdx" 
+                                    [(ngModel)]="subCategory.title" />
+                            } @else {
+                                {{subCategory.title}}
+                            }
+                        </td>
+                        
+                        @for (data of subCategory.data; track data.key; let itemIdx = $index) {
+                            <td (contextmenu)="onRightClick($event, {parentCategoryIdx, subCategoryIdx, itemIdx, data: subCategory.data, key: data.key, id: data.key+'_'+subCategoryIdx})"
+                                [ngClass]="{
+                                    'text-left py-1 px-2': subCategory.type !== 'Sub Category' && subCategory.type !== 'Items'
+                                }" 
+                                class="border-r border-gray-200">
+                                @if (subCategory.type === 'Sub Category' || subCategory.type === 'Items') {
+                                    <input 
+                                        appPositiveNumber
+                                        (input)="onReCalculate(parentCategoryIdx, subCategoryIdx, itemIdx, data.key)"
+                                        [attr.id]="data.key+'_'+subCategoryIdx"
+                                        [name]="data.key+'_'+subCategoryIdx" 
+                                        [(ngModel)]="data.value" />
+                                } @else {
+                                    {{data.value}}
+                                }
+                            </td>
+                        }
+                    </tr>
+
+                    @for (item of subCategory.items; track item.title; let itemIdx = $index) {
+
+                        <tr class="border-b border-gray-200" (keydown.enter)="onAddSubCategory(subCategory.items)">
+                            <td 
+                                class="text-left py-1 px-2 border-r border-gray-200">
+                                @if (item.type === 'Sub Category' || item.type === 'Items') {
+                                    <input 
+                                        style="text-align: left;"
+                                        [attr.id]="item.title+'_title_' + itemIdx"
+                                        [name]="item.title+'_title_' + itemIdx" 
+                                        [(ngModel)]="item.title" />
+                                } @else {
+                                    {{ item.title}}
+                                }
+                            </td>
+
+                            @for (data of item.data; track data.key; let subItemsIdx = $index) {
+                                <td (contextmenu)="onRightClick($event, {parentCategoryIdx, subCategoryIdx, itemIdx, data: item.data, key: data.key, id: data.key+'_'+subCategoryIdx + '_' + itemIdx})"
+                                    [ngClass]="{
+                                        'text-left py-1 px-2': item.type !== 'Sub Category' && item.type !== 'Items'
+                                    }" 
+                                    class="border-r border-gray-200">
+                                    @if (item.type === 'Sub Category' || item.type === 'Items') {
+                                        <input 
+                                            appPositiveNumber
+                                            (input)="onReCalculate(parentCategoryIdx, subCategoryIdx, itemIdx, data.key)"
+                                            [attr.id]="data.key+'_'+subCategoryIdx + '_' + itemIdx"
+                                            [name]="data.key+'_'+subCategoryIdx + '_' + itemIdx" 
+                                            [(ngModel)]="data.value" />
+                                    } @else {
+                                        {{data.value}}
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+
+                    <tr class="border-b border-gray-200" [attr.colspan]="months.length + 1">
+                        <td class="text-left py-1 px-2 cursor-pointer" 
+                            (click)="onAddSubCategory(subCategory.items)">
+                            Add New '{{subCategory.title}}' Category
+                        </td>
+                    </tr>
+    
+                    <tr class="border-b border-gray-200">
+                        <td class="text-left py-1 px-2 border-r border-gray-200 font-medium">{{subCategory.categorySummary?.title}}</td>
+    
+                        @for (data of subCategory?.categorySummary?.data; track data.key) {
+                            <td 
+                                class="border-r border-gray-200 text-center py-1 px-2 font-medium">
+                                {{data.value}}
+                            </td>
+                        }
+                    </tr>
+
+                    <tr class="border-b border-gray-200" [attr.colspan]="months.length + 1">
+                        <td class="text-left py-1 px-2"><div class="invisible">none</div></td>
+                    </tr>
+                }
+            }
+
+            @if (category?.categorySummary) {
+        
+                <tr class="border-b border-gray-200" [attr.colspan]="months.length + 1">
+                    <td class="text-left py-1 px-2 cursor-pointer" (click)="onAddParentCategory(category.items, parentCategoryIdx)">Add New Parent Category</td>
+                </tr>
+
+                <tr class="border-b border-gray-200" [attr.colspan]="months.length + 1">
+                    <td class="text-left py-1 px-2"><div class="invisible">none</div></td>
+                </tr>
+
+                <tr class="border-b border-gray-200">
+                    <td class="text-left py-1 px-2 border-r border-gray-200 font-bold">{{category.title + ' Total'}}</td>
+
+                    @for (data of category?.categorySummary?.data; track data.key) {
+                        <td 
+                            class="border-r border-gray-200 text-center py-1 px-2 font-bold">
+                            {{data.value}}
+                        </td>
+                    }
+                </tr>
+            }
+
+            @if (category.type !== 'Summary') {
+                <tr class="border-b border-gray-200" [attr.colspan]="months.length + 1">
+                    <td class="text-left py-1 px-2"><div class="invisible">none</div></td>
+                </tr>
+            }
+
+        }
+
+    </tbody>
+</table>
+
+<app-popup (applyAll)="onApplyAll($event)" [isModalOpen]="slectedObject"></app-popup>
